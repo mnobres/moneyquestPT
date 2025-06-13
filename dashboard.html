@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - MoneyQuest</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+<body>
+    <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+            <div class="app-container">
+                
+                
+                <!-- Balance Card -->
+                <div class="balance-card animate__animated animate__fadeIn">
+                    <div class="balance-info">
+                        <p>Saldo Disponível</p>
+                        <h3>R$ <span id="current-balance">5.247,90</span></h3>
+                    </div>
+                    <div class="balance-stats">
+                        <div class="stat">
+                            <p>Receitas</p>
+                            <span class="positive" id="total-income">+R$ 3.200,00</span>
+                        </div>
+                        <div class="stat">
+                            <p>Despesas</p>
+                            <span class="negative" id="total-expense">-R$ 1.952,10</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="quick-actions animate__animated animate__fadeIn animate__delay-1s">
+                    <button class="action-btn" id="add-income">
+                        <span class="action-icon">↑</span>
+                        <span>Receita</span>
+                    </button>
+                    <button class="action-btn" id="add-expense">
+                        <span class="action-icon">↓</span>
+                        <span>Despesa</span>
+                    </button>
+                    <button class="action-btn" id="add-goal">
+                        <span class="action-icon">🎯</span>
+                        <span>Meta</span>
+                    </button>
+                </div>
+                
+                <!-- Recent Transactions -->
+                <section class="section animate__animated animate__fadeIn animate__delay-2s">
+                    <div class="section-header">
+                        <h3>Transações Recentes</h3>
+                        <a href="transactions.html" class="see-all">Ver todas</a>
+                    </div>
+                    
+                    <div class="transactions-list" id="recent-transactions">
+                        <!-- Preenchido via JavaScript -->
+                    </div>
+                </section>
+                
+                <!-- Goals Progress -->
+                <section class="section animate__animated animate__fadeIn animate__delay-3s">
+                    <div class="section-header">
+                        <h3>Suas Metas</h3>
+                        <a href="goals.html" class="see-all">Ver todas</a>
+                    </div>
+                    
+                    <div class="goals-carousel" id="goals-carousel">
+                        <!-- Preenchido via JavaScript -->
+                    </div>
+                </section>
+            </div>
+            
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <a href="dashboard.html" class="nav-item active">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Início</span>
+                </a>
+                <a href="goals.html" class="nav-item">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-label">Metas</span>
+                </a>
+                <a href="transactions.html" class="nav-item">
+                    <span class="nav-icon">💸</span>
+                    <span class="nav-label">Transações</span>
+                </a>
+              
+            </nav>
+        </div>
+        <div class="phone-bottom-bar"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Inicializa os dados do dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carrega transações recentes
+            loadRecentTransactions();
+            
+            // Carrega metas
+            loadGoals();
+            
+            // Configura botões de ação
+            document.getElementById('add-income').addEventListener('click', function() {
+                window.location.href = 'transactions.html?type=income';
+            });
+            
+            document.getElementById('add-expense').addEventListener('click', function() {
+                window.location.href = 'transactions.html?type=expense';
+            });
+            
+            document.getElementById('add-goal').addEventListener('click', function() {
+                window.location.href = 'goals.html?new=true';
+            });
+        });
+        
+        function loadRecentTransactions() {
+            const transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            const recentTransactions = transactions.slice(0, 3).reverse();
+            const container = document.getElementById('recent-transactions');
+            
+            container.innerHTML = '';
+            
+            if (recentTransactions.length === 0) {
+                container.innerHTML = '<p class="no-data">Nenhuma transação recente</p>';
+                return;
+            }
+            
+            recentTransactions.forEach(trans => {
+                const item = document.createElement('div');
+                item.className = `transaction-item ${trans.type}`;
+                item.innerHTML = `
+                    <div class="transaction-icon">${trans.type === 'income' ? '↑' : '↓'}</div>
+                    <div class="transaction-details">
+                        <h4>${trans.category}</h4>
+                        <p>${formatDate(trans.date)}</p>
+                    </div>
+                    <div class="transaction-amount ${trans.type}">
+                        ${trans.type === 'income' ? '+' : '-'} R$ ${trans.amount.toFixed(2)}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        function loadGoals() {
+            const goals = JSON.parse(localStorage.getItem('goals')) || [];
+            const container = document.getElementById('goals-carousel');
+            
+            container.innerHTML = '';
+            
+            if (goals.length === 0) {
+                container.innerHTML = '<p class="no-data">Nenhuma meta cadastrada</p>';
+                return;
+            }
+            
+            goals.slice(0, 2).forEach(goal => {
+                const progress = (goal.current / goal.target) * 100;
+                const card = document.createElement('div');
+                card.className = 'goal-card';
+                card.innerHTML = `
+                    <div class="goal-icon">${goal.icon || '🎯'}</div>
+                    <div class="goal-info">
+                        <h4>${goal.name}</h4>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress" style="width: ${progress}%;"></div>
+                            </div>
+                            <span>${Math.round(progress)}%</span>
+                        </div>
+                        <p class="goal-amount">R$ ${goal.current.toFixed(2)}/R$ ${goal.target.toFixed(2)}</p>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
+        }
+    </script>
+</body>
+</html>

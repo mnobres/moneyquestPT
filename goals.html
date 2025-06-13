@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metas - MoneyQuest</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+<body>
+    <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+            <div class="app-container">
+                <!-- App Header -->
+                <header class="app-header">
+                    <h2>Suas Metas</h2>
+                    <button class="add-btn" id="add-goal-btn">+</button>
+                </header>
+                
+                <!-- Goals List -->
+                <div class="goals-list" id="goals-list">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <a href="dashboard.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Início</span>
+                </a>
+                <a href="goals.html" class="nav-item active">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-label">Metas</span>
+                </a>
+                <a href="transactions.html" class="nav-item">
+                    <span class="nav-icon">💸</span>
+                    <span class="nav-label">Transações</span>
+                </a>
+                
+            </nav>
+        </div>
+        <div class="phone-bottom-bar"></div>
+    </div>
+    
+    <!-- Goal Panel -->
+    <div class="panel" id="goal-panel">
+        <div class="panel-header">
+            <button class="panel-close" id="close-goal-panel">×</button>
+            <h3 id="goal-panel-title">Nova Meta</h3>
+        </div>
+        
+        <form id="goal-form">
+            <div class="form-group">
+                <label for="goal-name">Nome da Meta</label>
+                <input type="text" id="goal-name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="goal-icon">Ícone</label>
+                <select id="goal-icon">
+                    <option value="🏖️">🏖️ Viagem</option>
+                    <option value="💻">💻 Eletrônico</option>
+                    <option value="🚗">🚗 Carro</option>
+                    <option value="🏠">🏠 Casa</option>
+                    <option value="🎓">🎓 Educação</option>
+                    <option value="💰">💰 Reserva</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="goal-target">Valor Alvo (R$)</label>
+                <input type="number" id="goal-target" step="0.01" min="0.01" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="goal-deadline">Data Limite</label>
+                <input type="date" id="goal-deadline">
+            </div>
+            
+            <button type="submit" class="btn-submit">Salvar Meta</button>
+        </form>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Inicializa a página de metas
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carrega metas
+            loadGoals();
+            
+            // Configura painel de nova meta
+            setupGoalPanel();
+            
+            // Verifica se veio do botão de nova meta
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('new') === 'true') {
+                document.getElementById('goal-panel').classList.add('active');
+            }
+        });
+        
+        function loadGoals() {
+            const goals = JSON.parse(localStorage.getItem('goals')) || [];
+            const container = document.getElementById('goals-list');
+            container.innerHTML = '';
+            
+            if (goals.length === 0) {
+                container.innerHTML = '<p class="no-data">Nenhuma meta cadastrada</p>';
+                return;
+            }
+            
+            goals.forEach(goal => {
+                const progress = (goal.current / goal.target) * 100;
+                const daysLeft = goal.deadline ? 
+                    Math.ceil((new Date(goal.deadline) - new Date()) / (1000 * 60 * 60 * 24)) : 
+                    null;
+                
+                const goalItem = document.createElement('div');
+                goalItem.className = 'goal-item';
+                goalItem.innerHTML = `
+                    <div class="goal-icon">${goal.icon}</div>
+                    <div class="goal-info">
+                        <h3>${goal.name}</h3>
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress" style="width: ${progress}%;"></div>
+                            </div>
+                            <span>${Math.round(progress)}%</span>
+                        </div>
+                        <div class="goal-details">
+                            <span>R$ ${goal.current.toFixed(2)} / R$ ${goal.target.toFixed(2)}</span>
+                            ${daysLeft ? `<span>${daysLeft} dias restantes</span>` : ''}
+                        </div>
+                    </div>
+                    <button class="goal-action" data-id="${goal.id}">+</button>
+                `;
+                container.appendChild(goalItem);
+            });
+        }
+        
+        function setupGoalPanel() {
+            const form = document.getElementById('goal-form');
+            const panel = document.getElementById('goal-panel');
+            const closeBtn = document.getElementById('close-goal-panel');
+            const addBtn = document.getElementById('add-goal-btn');
+            
+            // Preenche a data mínima (amanhã)
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            document.getElementById('goal-deadline').min = tomorrow.toISOString().split('T')[0];
+            
+            // Abre o painel
+            addBtn.addEventListener('click', function() {
+                panel.classList.add('active');
+                form.reset();
+                document.getElementById('goal-panel-title').textContent = 'Nova Meta';
+            });
+            
+            // Fecha o painel
+            closeBtn.addEventListener('click', function() {
+                panel.classList.remove('active');
+            });
+            
+            // Submissão do formulário
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const goal = {
+                    id: Date.now(),
+                    name: document.getElementById('goal-name').value,
+                    icon: document.getElementById('goal-icon').value,
+                    target: parseFloat(document.getElementById('goal-target').value),
+                    current: 0,
+                    deadline: document.getElementById('goal-deadline').value || null,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Salva a meta
+                let goals = JSON.parse(localStorage.getItem('goals')) || [];
+                goals.push(goal);
+                localStorage.setItem('goals', JSON.stringify(goals));
+                
+                // Feedback e reset
+                alert('Meta criada com sucesso!');
+                form.reset();
+                panel.classList.remove('active');
+                
+                // Recarrega a lista
+                loadGoals();
+            });
+        }
+    </script>
+</body>
+</html>

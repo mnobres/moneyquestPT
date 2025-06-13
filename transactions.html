@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transações - MoneyQuest</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+<body>
+    <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+            <div class="app-container">
+                <!-- App Header -->
+                <header class="app-header">
+                    <h2>Transações</h2>
+                    <button class="filter-btn" id="filter-btn">🔍</button>
+                </header>
+                
+                <!-- Tabs -->
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="all">Todas</button>
+                    <button class="tab-btn" data-tab="income">Receitas</button>
+                    <button class="tab-btn" data-tab="expense">Despesas</button>
+                </div>
+                
+                <!-- Transactions List -->
+                <div class="transactions-list" id="transactions-list">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+                
+                <!-- Floating Action Button -->
+                <button class="fab-button" id="add-transaction-btn">+</button>
+            </div>
+            
+            <!-- Bottom Navigation -->
+            <nav class="bottom-nav">
+                <a href="dashboard.html" class="nav-item">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-label">Início</span>
+                </a>
+                <a href="goals.html" class="nav-item">
+                    <span class="nav-icon">🎯</span>
+                    <span class="nav-label">Metas</span>
+                </a>
+                <a href="transactions.html" class="nav-item active">
+                    <span class="nav-icon">💸</span>
+                    <span class="nav-label">Transações</span>
+                </a>
+             
+            </nav>
+        </div>
+        <div class="phone-bottom-bar"></div>
+    </div>
+    
+    <!-- Transaction Panel -->
+    <div class="panel" id="transaction-panel">
+        <div class="panel-header">
+            <button class="panel-close" id="close-panel">×</button>
+            <h3 id="panel-title">Nova Transação</h3>
+        </div>
+        
+        <form id="transaction-form">
+            <div class="form-group">
+                <label for="transaction-type">Tipo</label>
+                <select id="transaction-type" required>
+                    <option value="">Selecione...</option>
+                    <option value="income">Receita</option>
+                    <option value="expense">Despesa</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="transaction-amount">Valor (R$)</label>
+                <input type="number" id="transaction-amount" step="0.01" min="0.01" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="transaction-category">Categoria</label>
+                <select id="transaction-category" required>
+                    <option value="">Selecione...</option>
+                    <!-- Preenchido via JavaScript -->
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="transaction-date">Data</label>
+                <input type="date" id="transaction-date" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="transaction-description">Descrição (Opcional)</label>
+                <input type="text" id="transaction-description">
+            </div>
+            
+            <button type="submit" class="btn-submit">Salvar Transação</button>
+        </form>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        // Inicializa a página de transações
+        document.addEventListener('DOMContentLoaded', function() {
+            // Carrega transações
+            loadTransactions('all');
+            
+            // Configura tabs
+            setupTabs();
+            
+            // Configura painel de nova transação
+            setupTransactionPanel();
+            
+            // Configura botão flutuante
+            document.getElementById('add-transaction-btn').addEventListener('click', function() {
+                document.getElementById('transaction-panel').classList.add('active');
+                document.getElementById('transaction-type').value = '';
+                document.getElementById('transaction-category').innerHTML = '<option value="">Selecione...</option>';
+            });
+            
+            // Verifica se veio de um link específico (receita/despesa)
+            const urlParams = new URLSearchParams(window.location.search);
+            const type = urlParams.get('type');
+            
+            if (type && ['income', 'expense'].includes(type)) {
+                document.getElementById('transaction-panel').classList.add('active');
+                document.getElementById('transaction-type').value = type;
+                document.getElementById('transaction-type').dispatchEvent(new Event('change'));
+            }
+        });
+        
+        function setupTabs() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // Ativa tab clicada
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Carrega transações do tipo selecionado
+                    const tab = this.getAttribute('data-tab');
+                    loadTransactions(tab);
+                });
+            });
+        }
+        
+        function loadTransactions(type = 'all') {
+            let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            
+            // Filtra por tipo se necessário
+            if (type !== 'all') {
+                transactions = transactions.filter(t => t.type === type);
+            }
+            
+            // Ordena por data (mais recente primeiro)
+            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            const container = document.getElementById('transactions-list');
+            container.innerHTML = '';
+            
+            if (transactions.length === 0) {
+                container.innerHTML = '<p class="no-data">Nenhuma transação encontrada</p>';
+                return;
+            }
+            
+            transactions.forEach(trans => {
+                const item = document.createElement('div');
+                item.className = `transaction-item ${trans.type}`;
+                item.innerHTML = `
+                    <div class="transaction-icon">${trans.type === 'income' ? '↑' : '↓'}</div>
+                    <div class="transaction-details">
+                        <h4>${trans.category}</h4>
+                        <p>${formatDate(trans.date)} • ${trans.description || ''}</p>
+                    </div>
+                    <div class="transaction-amount ${trans.type}">
+                        ${trans.type === 'income' ? '+' : '-'} R$ ${trans.amount.toFixed(2)}
+                    </div>
+                `;
+                container.appendChild(item);
+            });
+        }
+        
+        function setupTransactionPanel() {
+            const typeSelect = document.getElementById('transaction-type');
+            const categorySelect = document.getElementById('transaction-category');
+            const form = document.getElementById('transaction-form');
+            const panel = document.getElementById('transaction-panel');
+            const closeBtn = document.getElementById('close-panel');
+            
+            // Categorias disponíveis
+            const categories = {
+                income: ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outros'],
+                expense: ['Alimentação', 'Transporte', 'Moradia', 'Lazer', 'Saúde', 'Educação', 'Outros']
+            };
+            
+            // Preenche a data atual
+            document.getElementById('transaction-date').valueAsDate = new Date();
+            
+            // Atualiza categorias quando o tipo muda
+            typeSelect.addEventListener('change', function() {
+                const type = this.value;
+                categorySelect.innerHTML = '<option value="">Selecione...</option>';
+                
+                if (type) {
+                    categories[type].forEach(cat => {
+                        categorySelect.innerHTML += `<option value="${cat}">${cat}</option>`;
+                    });
+                }
+            });
+            
+            // Fecha o painel
+            closeBtn.addEventListener('click', function() {
+                panel.classList.remove('active');
+            });
+            
+            // Submissão do formulário
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const transaction = {
+                    id: Date.now(),
+                    type: typeSelect.value,
+                    amount: parseFloat(document.getElementById('transaction-amount').value),
+                    category: categorySelect.value,
+                    date: document.getElementById('transaction-date').value,
+                    description: document.getElementById('transaction-description').value || ''
+                };
+                
+                // Salva a transação
+                let transactions = JSON.parse(localStorage.getItem('transactions')) || [];
+                transactions.push(transaction);
+                localStorage.setItem('transactions', JSON.stringify(transactions));
+                
+                // Feedback e reset
+                alert('Transação salva com sucesso!');
+                form.reset();
+                panel.classList.remove('active');
+                
+                // Recarrega a lista
+                const activeTab = document.querySelector('.tab-btn.active').getAttribute('data-tab');
+                loadTransactions(activeTab);
+                
+                // Atualiza o dashboard
+                if (window.location.pathname.includes('dashboard.html')) {
+                    loadRecentTransactions();
+                }
+            });
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('pt-BR');
+        }
+    </script>
+</body>
+</html>

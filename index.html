@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MoneyQuest</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+</head>
+<body>
+    <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+            <div class="splash-screen animate__animated animate__fadeIn">
+                <div class="logo animate__animated animate__bounceIn">💰</div>
+                <h1 class="app-name animate__animated animate__fadeInUp">MoneyQuest</h1>
+                <p class="slogan animate__animated animate__fadeInUp animate__delay-1s">Controle financeiro gamificado</p>
+                <button class="btn animate__animated animate__fadeInUp animate__delay-2s" id="start-btn">Começar Jornada</button>
+            </div>
+        </div>
+        <div class="phone-bottom-bar"></div>
+    </div>
+
+    <script src="script.js"></script>
+    <script>
+        document.getElementById('start-btn').addEventListener('click', function() {
+            this.classList.add('animate__pulse');
+            setTimeout(() => {
+                window.location.href = 'dashboard.html';
+            }, 500);
+        });
+    </script>
+</body>
+</html>
